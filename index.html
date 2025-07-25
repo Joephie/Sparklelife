@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sparkle Life AI 塔羅抽牌</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC&display=swap');
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #f0e5f6, #d4c2f9);
+    color: #3a2a5c;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background: #7e57c2;
+    padding: 1.2rem;
+    text-align: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: 0.06em;
+  }
+  main {
+    flex-grow: 1;
+    padding: 1rem 1.2rem 3rem 1.2rem;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+  label {
+    display: block;
+    margin-top: 1.2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  textarea, select {
+    width: 100%;
+    margin-top: 0.4rem;
+    font-size: 1rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1.5px solid #b8aee5;
+    resize: vertical;
+    background: #f9f7ff;
+    color: #3a2a5c;
+  }
+  button {
+    margin-top: 1.5rem;
+    background: #7e57c2;
+    color: white;
+    font-weight: 700;
+    font-size: 1.15rem;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background: #5e3ca5;
+  }
+  .result {
+    margin-top: 2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 0 12px rgba(126, 87, 194, 0.35);
+    padding: 1.5rem 1.2rem;
+    color: #3a2a5c;
+    line-height: 1.5;
+  }
+  .cards {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .card {
+    background: #d4c2f9;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(126, 87, 194, 0.5);
+    padding: 1rem;
+    width: 100px;
+    text-align: center;
+    user-select: none;
+  }
+  .card-title {
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .conclusion {
+    margin-top: 1rem;
+    font-style: italic;
+    font-weight: 600;
+    background: #ede9f7;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: inset 0 0 8px rgba(126, 87, 194, 0.2);
+  }
+  footer {
+    text-align: center;
+    padding: 1rem 0.5rem;
+    font-size: 0.9rem;
+    color: #6d5a91;
+  }
+  @media (max-width: 600px) {
+    .card {
+      width: 80px;
+      padding: 0.8rem;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>✨ Sparkle Life AI 塔羅抽牌 ✨</header>
+<main>
+  <label for="question">請輸入你的問題</label>
+  <textarea id="question" rows="3" placeholder="例如：我今年事業會有突破嗎？"></textarea>
+
+  <label for="style">選擇解讀風格</label>
+  <select id="style">
+    <option value="gentle">溫柔陪伴風</option>
+    <option value="neutral" selected>中性解說風</option>
+    <option value="mystic">神秘感強烈風</option>
+  </select>
+
+  <button id="drawBtn">抽牌並解讀</button>
+
+  <div id="result" class="result" style="display:none;">
+    <div class="cards" id="cards"></div>
+    <div class="conclusion" id="conclusion"></div>
+  </div>
+</main>
+<footer>© 2025 Sparkle Life Tarot - 只供靈性參考，不作專業心理診斷用途</footer>
+
+<script>
+// 牌組簡單版本：22張大阿卡那
+const TAROT_CARDS = [
+  {name: "愚者", desc: "開始、自由、冒險、純真", yesno: "是"},
+  {name: "魔術師", desc: "創造力、意志、掌控、行動", yesno: "是"},
+  {name: "女祭司", desc: "直覺、潛意識、神秘、智慧", yesno: "是"},
+  {name: "女皇", desc: "豐盛、母性、自然、滋養", yesno: "是"},
+  {name: "皇帝", desc: "權威、穩定、領導、保護", yesno: "是"},
+  {name: "教皇", desc: "傳統、信仰、教育、精神指引", yesno: "是"},
+  {name: "戀人", desc: "愛情、選擇、和諧、關係", yesno: "是"},
+  {name: "戰車", desc: "意志力、勝利、控制、前進", yesno: "是"},
+  {name: "力量", desc: "勇氣、耐心、內心力量、堅持", yesno: "是"},
+  {name: "隱者", desc: "孤獨、內省、尋找答案、智慧", yesno: "是"},
+  {name: "命運之輪", desc: "變化、循環、機會、命運", yesno: "視情況"},
+  {name: "正義", desc: "公平、平衡、因果、真相", yesno: "是"},
+  {name: "倒吊人", desc: "犧牲、等待、視角轉換、忍耐", yesno: "視情況"},
+  {name: "死神", desc: "結束、新開始、轉變、放下", yesno: "視情況"},
+  {name: "節制", desc: "平衡、節制、協調、治療", yesno: "是"},
+  {name: "惡魔", desc: "束縛、誘惑、物質、限制", yesno: "否"},
+  {name: "塔", desc: "突變、破壞、啟示、混亂", yesno: "否"},
+  {name: "星星", desc: "希望、療癒、靈感、指引", yesno: "是"},
+  {name: "月亮", desc: "幻象、潛意識、迷惑、直覺", yesno: "視情況"},
+  {name: "太陽", desc: "快樂、成功、活力、光明", yesno: "是"},
+  {name: "審判", desc: "覺醒、反思、救贖、轉變", yesno: "是"},
+  {name: "世界", desc: "完成、成就、旅程結束、新開始", yesno: "是"}
+];
+
+// 根據問題判斷牌陣，簡單關鍵字匹配
+function chooseSpread(question) {
+  const q = question.toLowerCase();
+  if (q.includes("未來") || q.includes("發展") || q.includes("工作") || q.includes("事業")) {
+    return 3; // 三張牌：過去-現在-未來
+  } else if (q.includes("是否") || q.includes("會不會") || q.includes("能否") || q.includes("行不行")) {
+    return 1; // 一張牌，事與否
+  } else if (q.includes("困惑") || q.includes("心情") || q.includes("感情") || q.includes("關係")) {
+    return 3; // 三張牌
+  } else if (q.includes("大問題") || q.includes("大事") || q.includes("轉折")) {
+    return 10; // 十字牌陣（但目前只示範最多3張）
+  }
+  return 1; // 預設一張牌
+}
+
+// 洗牌隨機抽牌(不重覆)
+function drawCards(num) {
+  const copy = [...TAROT_CARDS];
+  const drawn = [];
+  for (let i=0; i<num; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    drawn.push(copy.splice(idx, 1)[0]);
+  }
+  return drawn;
+}
+
+// 產生結論
+function generateConclusion(question, cards, style) {
+  let conclusion = "";
+  if(cards.length === 1) {
+    // 事與否牌，簡單判斷
+    const card = cards[0];
+    if (card.yesno === "是") conclusion = "根據牌面，答案傾向「是」👍";
+    else if (card.yesno === "否") conclusion = "根據牌面，答案傾向「否」👎";
+    else conclusion = "答案較為不確定，建議多加觀察和等待。";
+  } else if(cards.length ===3) {
+    conclusion = "三張牌分別代表過去、現在、未來。建議你從牌意中找尋靈感和方向，保持心境平和。";
+  } else {
+    conclusion = "抽到多張牌，請綜合牌義自行參考。";
+  }
+  if(style === "gentle") {
+    conclusion = "💜 溫柔提醒：" + conclusion + " 祝你平安喜樂。";
+  } else if(style === "mystic") {
+    conclusion = "🔮 神秘指引：" + conclusion + " 宇宙正與你同在。";
+  } else {
+    conclusion = "💡 解讀：" + conclusion;
+  }
+  return conclusion;
+}
+
+document.getElementById("drawBtn").addEventListener("click", () => {
+  const question = document.getElementById("question").value.trim();
+  if(!question) {
+    alert("請輸入你的問題");
+    return;
+  }
+  const style = document.getElementById("style").value;
+  const numCards = chooseSpread(question);
+  const cards = drawCards(numCards);
+
+  // 顯示牌
+  const cardsDiv = document.getElementById("cards");
+  cardsDiv.innerHTML = "";
+  cards.forEach((c, i) => {
+    const cardDiv = document.createElement("div");
+    cardDiv.className = "card";
+    cardDiv.innerHTML = `<div class="card-title">${c.name}</div><div>${c.desc}</div>`;
+    cardsDiv.appendChild(cardDiv);
+  });
+
+  // 顯示結論
+  const conclusionDiv = document.getElementById("conclusion");
+  conclusionDiv.textContent = generateConclusion(question, cards, style);
+
+  // 顯示結果區
+  document.getElementById("result").style.display = "block";
+});
+</script>
+</body>
+</html>
